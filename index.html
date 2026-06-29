@@ -268,8 +268,7 @@
         <div class="field"><label for="fName">Full name</label><input id="fName" type="text" placeholder="e.g. Maria Elena Rossi" autocomplete="off"></div>
         <div class="seg" id="sexSeg">
           <button data-sex="m" type="button">Male</button>
-          <button data-sex="f" type="button">Female</button>
-          <button data-sex="u" type="button" class="on">Unknown</button>
+          <button data-sex="f" type="button" class="on">Female</button>
         </div>
         <div class="row2">
           <div class="field"><label for="fBirth">Born</label><input id="fBirth" type="text" placeholder="year, e.g. 1948"></div>
@@ -412,10 +411,13 @@
     var rendered = {}; treeEl.innerHTML='';
     people.filter(function(p){ return !p.parentIds || p.parentIds.length===0; }).forEach(function(r){
       if(rendered[r.id]) return;
-      treeEl.appendChild(renderNode(r, rendered));
+      var prim=renderNode(r, rendered); treeEl.appendChild(prim);
+      if(prim._extraLis) prim._extraLis.forEach(function(x){ treeEl.appendChild(x); });
     });
   }
 
+  // Returns one primary <li> (with ._extraLis[] for additional unions).
+  // Callers must append primary + each extraLi to the parent <ul>.
   function renderNode(person, rendered){
     rendered[person.id] = true;
 
@@ -426,55 +428,61 @@
         if(get(pid) && !rendered[pid]) partners.push(get(pid));
       });
     }
-    // Mark all partners rendered now so siblings don't re-render them
     partners.forEach(function(pt){ rendered[pt.id] = true; });
 
-    var li = document.createElement('li');
+    var lis = [];
 
     if(partners.length === 0){
-      // Solo card — no partner
-      var couple0 = document.createElement('div'); couple0.className='couple';
-      couple0.appendChild(card(person, null, false));
-      li.appendChild(couple0);
+      // Solo — no partner
+      var li0 = document.createElement('li');
+      var c0 = document.createElement('div'); c0.className='couple';
+      c0.appendChild(card(person, null, false));
+      li0.appendChild(c0);
       var soloKids = childrenOf(person.id)
         .filter(function(c){ return !rendered[c.id]; })
         .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
-      appendKidsBlock(li, soloKids, person, null, rendered);
-    } else {
-      // One or more partners — each gets its own union row + children block
-      var claimedKids = {};
-      partners.forEach(function(partner, idx){
-        var coupleN = document.createElement('div'); coupleN.className='couple';
-        // Suppress +Partner button on duplicate card rows (idx>0) to avoid confusion
-        coupleN.appendChild(card(person, partner, idx > 0));
-        var u=document.createElement('div'); u.className='union'; coupleN.appendChild(u);
-        coupleN.appendChild(card(partner, person, false));
-        li.appendChild(coupleN);
+      appendKidsBlock(li0, soloKids, person, null, rendered);
+      lis.push(li0);
 
-        // Children shared by this specific pair
+    } else {
+      // Each union gets its own independent <li>
+      var claimedKids = {};
+
+      partners.forEach(function(partner, idx){
+        var liN = document.createElement('li');
+        var coupleN = document.createElement('div'); coupleN.className='couple';
+        coupleN.appendChild(card(person, partner, idx > 0));
+        var uEl=document.createElement('div'); uEl.className='union'; coupleN.appendChild(uEl);
+        coupleN.appendChild(card(partner, person, false));
+        liN.appendChild(coupleN);
+
+        // Children whose parentIds include BOTH this person and this partner
         var sharedMap = {};
         childrenOf(person.id).forEach(function(c){ sharedMap[c.id]=c; });
         childrenOf(partner.id).forEach(function(c){ sharedMap[c.id]=c; });
         var sharedKids = Object.keys(sharedMap).map(function(k){return sharedMap[k];})
           .filter(function(c){
             if(rendered[c.id] || claimedKids[c.id]) return false;
-            var hasPerson  = c.parentIds && c.parentIds.indexOf(person.id) > -1;
+            var hasPerson  = c.parentIds && c.parentIds.indexOf(person.id)  > -1;
             var hasPartner = c.parentIds && c.parentIds.indexOf(partner.id) > -1;
             return hasPerson && hasPartner;
           })
           .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
         sharedKids.forEach(function(c){ claimedKids[c.id]=true; });
-        appendKidsBlock(li, sharedKids, person, partner, rendered);
+        appendKidsBlock(liN, sharedKids, person, partner, rendered);
+        lis.push(liN);
       });
 
-      // Leftover children of person not claimed by any union
+      // Single-parent children not claimed by any union go under the last union block
       var leftoverKids = childrenOf(person.id)
         .filter(function(c){ return !rendered[c.id] && !claimedKids[c.id]; })
         .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
-      appendKidsBlock(li, leftoverKids, person, null, rendered);
+      if(leftoverKids.length) appendKidsBlock(lis[lis.length-1], leftoverKids, person, null, rendered);
     }
 
-    return li;
+    var primary = lis[0];
+    primary._extraLis = lis.slice(1);
+    return primary;
   }
 
   function appendKidsBlock(li, kids, person, partner, rendered){
@@ -488,7 +496,12 @@
     li.appendChild(tg);
     if(!isClosed){
       var ul=document.createElement('ul');
-      kids.forEach(function(k){ rendered[k.id]=true; ul.appendChild(renderNode(k, rendered)); });
+      kids.forEach(function(k){
+        rendered[k.id]=true;
+        var primary=renderNode(k, rendered);
+        ul.appendChild(primary);
+        if(primary._extraLis) primary._extraLis.forEach(function(x){ ul.appendChild(x); });
+      });
       li.appendChild(ul);
     }
   }
@@ -535,7 +548,7 @@
     maidenField.style.display = (s==='f')?'block':'none';
   }
   Array.prototype.forEach.call(sexSeg.querySelectorAll('button'), function(b){ b.onclick=function(){ setSex(b.getAttribute('data-sex')); }; });
-  function clearFields(){ fName.value=''; fBirth.value=''; fDeath.value=''; fMaiden.value=''; fNotes.value=''; existingSelect.value=''; setSex('u'); newFields.style.display='block'; }
+  function clearFields(){ fName.value=''; fBirth.value=''; fDeath.value=''; fMaiden.value=''; fNotes.value=''; existingSelect.value=''; setSex('f'); newFields.style.display='block'; }
   function fillExisting(exclude){
     existingSelect.innerHTML='<option value="">— Add someone new —</option>';
     allPeople().forEach(function(p){
@@ -548,8 +561,8 @@
   function openModal(){ overlay.classList.add('open'); modalOpen=true; setTimeout(function(){ if(newFields.style.display!=='none') fName.focus(); },50); }
   function closeModal(){ overlay.classList.remove('open'); modalOpen=false; }
 
-  function openAddFounder(){ current={mode:'founder',person:null,mate:null,sex:'u'}; modalTitle.textContent='Add an elder'; modalCtx.textContent='A founding ancestor at the top of the tree.'; dedupBox.style.display='none'; modalDelete.style.display='none'; clearFields(); openModal(); }
-  function openAddChild(person, mate){ current={mode:'child',person:person,mate:mate||null,sex:'u'}; modalTitle.textContent='Add a child'; modalCtx.textContent = mate?('Child of '+person.name+' & '+mate.name):('Child of '+person.name); dedupLbl.textContent='Is this child already in the tree?'; dedupBox.style.display='block'; var ex=[person.id]; if(mate) ex.push(mate.id); fillExisting(ex); modalDelete.style.display='none'; clearFields(); openModal(); }
+  function openAddFounder(){ current={mode:'founder',person:null,mate:null,sex:'f'}; modalTitle.textContent='Add an elder'; modalCtx.textContent='A founding ancestor at the top of the tree.'; dedupBox.style.display='none'; modalDelete.style.display='none'; clearFields(); openModal(); }
+  function openAddChild(person, mate){ current={mode:'child',person:person,mate:mate||null,sex:'f'}; modalTitle.textContent='Add a child'; modalCtx.textContent = mate?('Child of '+person.name+' & '+mate.name):('Child of '+person.name); dedupLbl.textContent='Is this child already in the tree?'; dedupBox.style.display='block'; var ex=[person.id]; if(mate) ex.push(mate.id); fillExisting(ex); modalDelete.style.display='none'; clearFields(); openModal(); }
   function openAddPartner(person){ current={mode:'partner',person:person,mate:null,sex:person.sex==='f'?'m':(person.sex==='m'?'f':'u')}; modalTitle.textContent='Add a partner'; modalCtx.textContent='Partner / spouse of '+person.name; dedupLbl.textContent='Is this partner already in the tree?'; dedupBox.style.display='block'; fillExisting([person.id]); modalDelete.style.display='none'; clearFields(); setSex(current.sex); openModal(); }
   function openEdit(person){ current={mode:'edit',person:person,mate:null,sex:person.sex||'u'}; modalTitle.textContent='Edit '+person.name; modalCtx.textContent='Update details. Changes show for everyone.'; dedupBox.style.display='none'; clearFields(); fName.value=person.name||''; fBirth.value=person.birth||''; fDeath.value=person.death||''; fMaiden.value=person.maiden||''; fNotes.value=person.notes||''; setSex(person.sex||'u'); modalDelete.style.display='block'; openModal(); }
 
