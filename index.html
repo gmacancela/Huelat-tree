@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Family Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E9E3D2; --surface:#FBF9F2; --surface-2:#F3EFE2;
+    --ink:#22281E; --ink-soft:#5B6152;
+    --pine:#244334; --pine-2:#2F5A45;
+    --gold:#B07D24; --gold-soft:#E7D6AE;
+    --clay:#A6543A; --leaf:#3C7A57;
+    --line:#A8B5A1; --danger:#9A3B2E;
+    --radius:14px; --shadow:0 1px 2px rgba(34,40,30,.08),0 6px 18px rgba(34,40,30,.07);
+    --display:'Fraunces',Georgia,serif;
+    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--body); color:var(--ink); background:var(--bg);
+    background-image:radial-gradient(circle at 20% -10%,rgba(47,90,69,.10),transparent 45%),
+                     radial-gradient(circle at 90% 0%,rgba(176,125,36,.08),transparent 40%);
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:var(--body); cursor:pointer; border:none; background:none}
+  input,textarea,select{font-family:var(--body); font-size:15px}
+
+  header.app{
+    position:sticky; top:0; z-index:30;
+    background:linear-gradient(180deg,rgba(36,67,52,.97),rgba(36,67,52,.94));
+    color:#F4F1E6; padding:14px 18px;
+    box-shadow:0 2px 14px rgba(34,40,30,.18); backdrop-filter:blur(6px);
+  }
+  .head-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap; max-width:1200px; margin:0 auto}
+  .brand{display:flex; align-items:center; gap:11px; margin-right:auto}
+  .mark{width:34px;height:34px;flex:0 0 auto}
+  .title-wrap h1{font-family:var(--display); font-weight:600; font-size:23px; line-height:1.05; margin:0; letter-spacing:.2px}
+  .title-wrap .sub{font-size:12px; color:#C7D3BE; letter-spacing:.04em}
+  .tools{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .status{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#D8E0CC; background:rgba(255,255,255,.08); padding:6px 11px; border-radius:999px}
+  .status .dot{width:8px;height:8px;border-radius:50%;background:#caa84a;flex:0 0 auto}
+  .status.live .dot{background:#67c98a; box-shadow:0 0 0 3px rgba(103,201,138,.25)}
+  .status.error .dot{background:#e07a5f}
+  .count{font-size:12.5px; color:#D8E0CC; background:rgba(255,255,255,.08); padding:6px 11px; border-radius:999px; white-space:nowrap}
+  .count b{color:#fff; font-weight:600}
+  .btn{display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:500; padding:8px 13px; border-radius:10px; transition:transform .08s ease, background .15s ease; white-space:nowrap}
+  .btn:active{transform:translateY(1px)}
+  .btn-gold{background:var(--gold); color:#2a1f06; box-shadow:0 1px 0 rgba(0,0,0,.12)}
+  .btn-gold:hover{background:#c08c2f}
+  .btn-ghost{background:rgba(255,255,255,.10); color:#F4F1E6}
+  .btn-ghost:hover{background:rgba(255,255,255,.18)}
+  .editor-tag{display:flex; align-items:center; gap:6px; font-size:12.5px; color:#D8E0CC}
+  .editor-tag input{width:120px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18); color:#fff; border-radius:8px; padding:5px 8px; font-size:12.5px}
+  .editor-tag input::placeholder{color:#aebba2}
+
+  .search-wrap{position:relative}
+  .search-wrap input{width:190px; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); color:#fff; border-radius:10px; padding:8px 12px 8px 32px; font-size:13.5px}
+  .search-wrap input::placeholder{color:#b6c3aa}
+  .search-wrap .ico{position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.7}
+  .search-results{position:absolute; top:calc(100% + 6px); left:0; right:0; background:var(--surface); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; max-height:280px; overflow-y:auto; z-index:40}
+  .search-results button{display:block; width:100%; text-align:left; padding:10px 13px; color:var(--ink); font-size:14px; border-bottom:1px solid var(--surface-2)}
+  .search-results button:hover{background:var(--surface-2)}
+  .search-results .yrs{color:var(--ink-soft); font-size:12px}
+  .search-results .empty{padding:12px 13px; color:var(--ink-soft); font-size:13px}
+
+  .notice{max-width:1200px; margin:12px auto 0; padding:0 18px}
+  .notice-inner{display:flex; gap:10px; align-items:flex-start; background:#FFF7E2; border:1px solid var(--gold-soft); color:#5c4410; padding:11px 14px; border-radius:12px; font-size:13.5px; line-height:1.45}
+  .notice-inner.err{background:#FBEEE9; border-color:#e7c4b6; color:#7a3322}
+
+  .stage{max-width:100%; overflow:auto; padding:34px 26px 120px; min-height:60vh}
+  .tree-scroll{display:inline-block; min-width:100%}
+  .tree, .tree ul{position:relative; margin:0; padding:0; list-style:none}
+  .tree{display:flex; justify-content:center; gap:50px; flex-wrap:nowrap}
+  .tree ul{display:flex; justify-content:center; padding-top:26px}
+  .tree li{list-style:none; position:relative; padding:26px 9px 0; text-align:center}
+  .tree li::before,.tree li::after{content:''; position:absolute; top:0; right:50%; width:50%; height:26px; border-top:2px solid var(--line)}
+  .tree li::after{right:auto; left:50%; border-left:2px solid var(--line)}
+  .tree li:only-child::before,.tree li:only-child::after{display:none}
+  .tree li:first-child::before,.tree li:last-child::after{border:0 none}
+  .tree li:last-child::before{border-right:2px solid var(--line); border-radius:0 7px 0 0}
+  .tree li:first-child::after{border-radius:7px 0 0 0}
+  .tree ul::before{content:''; position:absolute; top:0; left:50%; width:0; height:26px; border-left:2px solid var(--line)}
+  .tree > li{padding-top:0}
+  .tree > li::before,.tree > li::after{display:none}
+
+  .couple{display:inline-flex; align-items:stretch; gap:0; position:relative}
+  .union{align-self:center; width:18px; height:2px; background:var(--clay); position:relative; flex:0 0 auto}
+  .union::after{content:'♥'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:10px; color:var(--clay); background:var(--bg); padding:0 1px; line-height:1}
+
+  .card{position:relative; background:var(--surface); border:1px solid #E2DCC9; border-radius:var(--radius); box-shadow:var(--shadow); padding:11px 13px 10px; min-width:148px; max-width:210px; text-align:left; transition:box-shadow .15s, transform .08s}
+  .card:hover{box-shadow:0 2px 4px rgba(34,40,30,.10),0 10px 26px rgba(34,40,30,.12)}
+  .card.flash{animation:flash 1.6s ease}
+  @keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--gold),var(--shadow)}100%{box-shadow:var(--shadow)}}
+  .card .stripe{position:absolute; left:0; top:11px; bottom:10px; width:4px; border-radius:4px; background:var(--pine-2)}
+  .card.sx-f .stripe{background:var(--clay)}
+  .card.sx-m .stripe{background:var(--pine-2)}
+  .card.sx-u .stripe{background:var(--gold)}
+  .card-body{padding-left:8px}
+  .nm{font-family:var(--display); font-weight:600; font-size:16px; line-height:1.12; color:var(--ink); word-break:break-word}
+  .maiden{font-family:var(--display); font-style:italic; font-weight:400; font-size:12.5px; color:var(--ink-soft)}
+  .yrs{font-size:12px; color:var(--ink-soft); margin-top:2px; font-variant-numeric:tabular-nums}
+  .note{font-size:11.5px; color:var(--ink-soft); margin-top:5px; line-height:1.35; max-height:0; overflow:hidden; transition:max-height .2s}
+  .card:hover .note{max-height:60px}
+  .added{font-size:10.5px; color:#9aa18d; margin-top:5px; letter-spacing:.02em}
+  .acts{display:flex; gap:4px; margin-top:9px; flex-wrap:wrap}
+  .chip{font-size:11.5px; font-weight:500; padding:4px 8px; border-radius:8px; line-height:1; border:1px solid transparent; transition:background .12s, border-color .12s}
+  .chip-child{background:#E8F1EA; color:var(--leaf); border-color:#cfe4d6}
+  .chip-child:hover{background:#dcebe0}
+  .chip-partner{background:#F6E9E3; color:var(--clay); border-color:#ecd4c8}
+  .chip-partner:hover{background:#efddd3}
+  .chip-edit{background:var(--surface-2); color:var(--ink-soft)}
+  .chip-edit:hover{background:#e9e3d2}
+
+  .toggle{margin-top:8px; display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--pine); background:var(--surface-2); padding:4px 9px; border-radius:999px; border:1px solid #e0dac7}
+  .toggle:hover{background:#e9e3d2}
+  .toggle .car{transition:transform .15s; font-size:9px}
+  .toggle.closed .car{transform:rotate(-90deg)}
+
+  .empty-stage{max-width:560px; margin:8vh auto; text-align:center; padding:0 22px}
+  .empty-stage .leaf-ico{margin-bottom:14px}
+  .empty-stage h2{font-family:var(--display); font-weight:600; font-size:27px; color:var(--pine); margin:0 0 10px}
+  .empty-stage p{color:var(--ink-soft); font-size:15px; line-height:1.55; margin:0 auto 22px; max-width:440px}
+  .empty-stage .big{font-size:15px; padding:13px 22px}
+
+  /* setup screen */
+  .setup{max-width:680px; margin:5vh auto; padding:0 22px}
+  .setup-card{background:var(--surface); border:1px solid #E2DCC9; border-radius:18px; box-shadow:var(--shadow); padding:30px 32px}
+  .setup h2{font-family:var(--display); font-weight:600; font-size:25px; color:var(--pine); margin:0 0 6px}
+  .setup .lead{color:var(--ink-soft); font-size:15px; line-height:1.55; margin:0 0 20px}
+  .setup ol{margin:0 0 8px; padding-left:22px}
+  .setup li{margin:0 0 13px; line-height:1.55; font-size:14.5px}
+  .setup li b{color:var(--pine)}
+  .setup code{background:var(--surface-2); padding:1px 6px; border-radius:6px; font-size:13px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .setup pre{background:#22281E; color:#E7E2D2; padding:14px 16px; border-radius:12px; overflow:auto; font-size:12.5px; line-height:1.5; margin:10px 0 4px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .setup .tip{background:#FFF7E2; border:1px solid var(--gold-soft); color:#5c4410; padding:11px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; margin-top:16px}
+
+  .legend{position:fixed; left:14px; bottom:14px; z-index:20; background:var(--surface); border:1px solid #E2DCC9; border-radius:12px; box-shadow:var(--shadow); padding:10px 13px; font-size:12px}
+  .legend .row{display:flex; align-items:center; gap:7px; color:var(--ink-soft); margin:3px 0}
+  .legend .sw{width:13px; height:13px; border-radius:4px; flex:0 0 auto}
+
+  .overlay{position:fixed; inset:0; background:rgba(28,34,24,.45); z-index:60; display:flex; align-items:center; justify-content:center; padding:18px; opacity:0; pointer-events:none; transition:opacity .15s}
+  .overlay.open{opacity:1; pointer-events:auto}
+  .modal{background:var(--surface); width:100%; max-width:440px; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,.3); max-height:90vh; overflow-y:auto; transform:translateY(8px); transition:transform .15s}
+  .overlay.open .modal{transform:translateY(0)}
+  .modal-head{padding:20px 22px 4px}
+  .modal-head h3{font-family:var(--display); font-weight:600; font-size:21px; margin:0; color:var(--pine)}
+  .modal-head .ctx{font-size:13px; color:var(--ink-soft); margin-top:3px}
+  .modal-body{padding:14px 22px 4px}
+  .field{margin-bottom:13px}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; letter-spacing:.01em}
+  .field input,.field textarea,.field select{width:100%; border:1.5px solid #DED8C6; border-radius:10px; padding:10px 12px; background:#fff; color:var(--ink); transition:border-color .12s}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none; border-color:var(--gold)}
+  .field textarea{resize:vertical; min-height:56px}
+  .row2{display:flex; gap:10px}
+  .row2 .field{flex:1}
+  .seg{display:flex; gap:6px; margin-bottom:13px}
+  .seg button{flex:1; padding:9px; border-radius:10px; font-size:13px; font-weight:500; border:1.5px solid #DED8C6; background:#fff; color:var(--ink-soft)}
+  .seg button.on{border-color:var(--pine); background:#EAF1EB; color:var(--pine)}
+  .dedup{background:var(--surface-2); border-radius:12px; padding:12px 13px; margin-bottom:13px}
+  .dedup .lbl{font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:7px}
+  .dedup .hint{font-size:11.5px; color:#9aa18d; margin-top:6px; line-height:1.4}
+  .modal-foot{padding:8px 22px 20px; display:flex; gap:10px; align-items:center}
+  .modal-foot .btn-save{background:var(--leaf); color:#fff; font-size:15px; font-weight:600; padding:12px 20px; border-radius:11px; flex:1}
+  .modal-foot .btn-save:hover{background:#347049}
+  .modal-foot .btn-cancel{color:var(--ink-soft); font-size:14px; padding:12px 14px; font-weight:500}
+  .modal-foot .btn-del{color:var(--danger); font-size:13px; font-weight:600; padding:12px 8px}
+  .x{position:absolute; top:16px; right:18px; font-size:20px; color:var(--ink-soft); line-height:1; padding:4px}
+  .x:hover{color:var(--ink)}
+
+  .toast{position:fixed; left:50%; bottom:24px; transform:translate(-50%,140%); background:var(--pine); color:#F4F1E6; padding:12px 16px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.25); z-index:80; display:flex; align-items:center; gap:14px; font-size:14px; transition:transform .25s ease; max-width:92vw}
+  .toast.show{transform:translate(-50%,0)}
+  .toast button{background:var(--gold); color:#2a1f06; font-weight:600; padding:7px 12px; border-radius:8px; font-size:13px}
+
+  .lock{position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:20px;
+    background:var(--bg);
+    background-image:radial-gradient(circle at 20% -10%,rgba(47,90,69,.14),transparent 45%),radial-gradient(circle at 90% 0%,rgba(176,125,36,.10),transparent 40%)}
+  .lock-card{background:var(--surface); border:1px solid #E2DCC9; border-radius:20px; box-shadow:0 20px 50px rgba(34,40,30,.18); padding:34px 32px; max-width:380px; width:100%; text-align:center}
+  .lock-card .mark{width:46px;height:46px;margin:0 auto 14px}
+  .lock-card h2{font-family:var(--display); font-weight:600; font-size:24px; color:var(--pine); margin:0 0 6px}
+  .lock-card p{color:var(--ink-soft); font-size:14.5px; line-height:1.5; margin:0 0 20px}
+  .lock-card input{width:100%; border:1.5px solid #DED8C6; border-radius:11px; padding:12px 14px; font-size:16px; text-align:center; background:#fff; color:var(--ink)}
+  .lock-card input:focus{outline:none; border-color:var(--gold)}
+  .lock-err{color:var(--danger); font-size:13px; min-height:18px; margin-top:9px}
+  .lock-card button{margin-top:6px; width:100%; background:var(--leaf); color:#fff; font-weight:600; font-size:15px; padding:12px; border-radius:11px}
+  .lock-card button:hover{background:#347049}
+
+  @media (max-width:640px){
+    .search-wrap input{width:140px}
+    .editor-tag{order:5}
+    .title-wrap h1{font-size:20px}
+    .stage{padding:24px 12px 130px}
+    .tree{gap:24px}
+    .legend{display:none}
+    .card{min-width:138px}
+    .setup-card{padding:22px 18px}
+  }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="head-row">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 36V22" stroke="#C7D3BE" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M20 26C20 26 13 25 11 19C16 18 20 22 20 26Z" fill="#8FB89A"/>
+        <path d="M20 24C20 24 27 22 28 15C22 14 20 19 20 24Z" fill="#B07D24"/>
+        <path d="M20 20C20 20 16 12 20 5C24 12 20 20 20 20Z" fill="#E7D6AE"/>
+        <circle cx="20" cy="8" r="2.4" fill="#fff"/>
+      </svg>
+      <div class="title-wrap">
+        <h1>Our Family Tree</h1>
+        <div class="sub">A living tree we grow together</div>
+      </div>
+    </div>
+    <div class="tools" id="tools">
+      <div class="search-wrap">
+        <svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#b6c3aa" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="#b6c3aa" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" type="text" placeholder="Find a relative" autocomplete="off">
+        <div id="searchResults" class="search-results" style="display:none"></div>
+      </div>
+      <span class="editor-tag" title="Your name is attached to the people you add or edit">You:&nbsp;<input id="editorName" type="text" placeholder="your name" maxlength="40"></span>
+      <span class="status" id="status"><span class="dot"></span><span id="statusTxt">Connecting…</span></span>
+      <span class="count" id="count"><b>0</b> people</span>
+      <button class="btn btn-gold" id="addFounder">+ Add an elder</button>
+      <button class="btn btn-ghost" id="exportBtn" title="Download a backup of the whole tree">Backup</button>
+      <button class="btn btn-ghost" id="importBtn" title="Restore the tree from a backup file">Restore</button>
+      <input id="importFile" type="file" accept="application/json,.json" style="display:none">
+    </div>
+  </div>
+</header>
+
+<div class="notice" id="noticeArea"></div>
+
+<main class="stage" id="stage">
+  <div class="empty-stage" id="emptyState" style="display:none">
+    <svg class="leaf-ico" width="62" height="62" viewBox="0 0 40 40" fill="none"><path d="M20 38V20" stroke="#A8B5A1" stroke-width="2.4" stroke-linecap="round"/><path d="M20 26C20 26 11 25 8 17C15 16 20 21 20 26Z" fill="#8FB89A"/><path d="M20 22C20 22 29 20 31 11C23 10 20 16 20 22Z" fill="#B07D24"/></svg>
+    <h2>The tree is waiting for its first roots</h2>
+    <p>Start by adding the eldest family members you know — the great-grandparents — then everyone can find their branch and grow it from there. Each person already in the tree can be picked again, so the same relative is never added twice.</p>
+    <button class="btn btn-gold big" id="addFirst">Plant the first elder</button>
+  </div>
+  <div class="tree-scroll" id="treeScroll" style="display:none"><ul class="tree" id="tree"></ul></div>
+  <div class="setup" id="setupScreen" style="display:none"></div>
+</main>
+
+<div class="legend" id="legend" style="display:none">
+  <div class="row"><span class="sw" style="background:#2F5A45"></span> Person</div>
+  <div class="row"><span class="sw" style="background:#A6543A"></span> Partner link</div>
+  <div class="row"><span class="sw" style="background:#3C7A57"></span> Child</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="x" id="modalX" aria-label="Close">&times;</button>
+    <div class="modal-head"><h3 id="modalTitle">Add a person</h3><div class="ctx" id="modalCtx"></div></div>
+    <div class="modal-body">
+      <div class="dedup" id="dedupBox" style="display:none">
+        <div class="lbl" id="dedupLbl">Already in the tree?</div>
+        <select id="existingSelect"><option value="">— Add someone new —</option></select>
+        <div class="hint">Pick an existing relative to link them here instead of creating a duplicate.</div>
+      </div>
+      <div id="newFields">
+        <div class="field"><label for="fName">Full name</label><input id="fName" type="text" placeholder="e.g. Maria Elena Rossi" autocomplete="off"></div>
+        <div class="seg" id="sexSeg">
+          <button data-sex="m" type="button">Male</button>
+          <button data-sex="f" type="button">Female</button>
+          <button data-sex="u" type="button" class="on">Prefer not to say</button>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="fBirth">Born</label><input id="fBirth" type="text" placeholder="year, e.g. 1948"></div>
+          <div class="field"><label for="fDeath">Died</label><input id="fDeath" type="text" placeholder="year (if applicable)"></div>
+        </div>
+        <div class="field" id="maidenField" style="display:none"><label for="fMaiden">Maiden / birth name</label><input id="fMaiden" type="text" placeholder="optional"></div>
+        <div class="field"><label for="fNotes">Notes</label><textarea id="fNotes" placeholder="A line or two — where they lived, a memory, anything"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-del" id="modalDelete" style="display:none">Remove</button>
+      <button class="btn-cancel" id="modalCancel">Cancel</button>
+      <button class="btn-save" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="lock" id="lockScreen">
+  <div class="lock-card">
+    <svg class="mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M20 36V22" stroke="#244334" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M20 26C20 26 13 25 11 19C16 18 20 22 20 26Z" fill="#8FB89A"/>
+      <path d="M20 24C20 24 27 22 28 15C22 14 20 19 20 24Z" fill="#B07D24"/>
+      <path d="M20 20C20 20 16 12 20 5C24 12 20 20 20 20Z" fill="#E7D6AE"/>
+      <circle cx="20" cy="8" r="2.4" fill="#244334"/>
+    </svg>
+    <h2>Our Family Tree</h2>
+    <p>Welcome! Enter the family passphrase to start adding to the tree.</p>
+    <input id="passInput" type="text" placeholder="family passphrase" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="lock-err" id="lockErr"></div>
+    <button id="passBtn">Enter</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastAction" style="display:none"></button></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     STEP 1 — PASTE YOUR FIREBASE CONFIG BELOW
+     (Project settings → General → Your apps → Web app → Config)
+     Make sure databaseURL is included — it powers the live sync.
+     ============================================================ */
+  var firebaseConfig = {
+    apiKey:            "AIzaSyAGmyZnC7S3uSaEovwdXvM7PsWFGqJeNVM",
+    authDomain:        "family-tree-5a511.firebaseapp.com",
+    databaseURL:       "https://family-tree-5a511-default-rtdb.firebaseio.com",
+    projectId:         "family-tree-5a511",
+    storageBucket:     "family-tree-5a511.firebasestorage.app",
+    messagingSenderId: "16344870789",
+    appId:             "1:16344870789:web:4ac27277b516a345e65eec"
+  };
+
+  // If the app ever says the SDK failed to load, bump this version number.
+  var FIREBASE_VERSION = "10.12.2";
+  var TREE_PATH = "familyTree";   // node in your database where the tree lives
+  var PASSPHRASE = "Huelat2026";  // the word family members type to enter (change anytime)
+  /* ============================================================ */
+
+  var fb = {};            // holds imported firebase functions
+  var treeRef = null;
+  var connected = false;
+
+  function isConfigured(){
+    return firebaseConfig.databaseURL && firebaseConfig.databaseURL.indexOf("PASTE_") < 0
+        && firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("PASTE_") < 0;
+  }
+
+  function uid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+  }
+  function blankState(){ return { version:1, meta:{ title:"Our Family Tree", updatedAt:Date.now() }, people:{} }; }
+
+  var state = blankState();
+  var collapsed = {};
+  var editorName = "";
+
+  /* ---------------- Helpers ---------------- */
+  function allPeople(){
+    var ppl = state.people || {};
+    return Object.keys(ppl).map(function(k){return ppl[k];})
+      .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+  }
+  function get(id){ return (state.people||{})[id]; }
+  function childrenOf(id){
+    return allPeople().filter(function(p){ return p.parentIds && p.parentIds.indexOf(id)>-1; });
+  }
+  function isDescendant(anc, cand){
+    if(anc===cand) return true;
+    var stack = childrenOf(anc).map(function(c){return c.id;}), seen={};
+    while(stack.length){
+      var x=stack.pop(); if(x===cand) return true;
+      if(seen[x]) continue; seen[x]=true;
+      childrenOf(x).forEach(function(c){ stack.push(c.id); });
+    }
+    return false;
+  }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function yearsText(p){
+    if(p.birth && p.death) return p.birth + " – " + p.death;
+    if(p.birth) return "b. " + p.birth;
+    if(p.death) return "d. " + p.death;
+    return "";
+  }
+
+  /* ---------------- Firebase: read-modify-write ---------------- */
+  function commit(mutator){
+    if(!treeRef){
+      mutator(state); state.meta.updatedAt = Date.now(); render(); return Promise.resolve();
+    }
+    return fb.runTransaction(treeRef, function(current){
+      var base = (current && current.people) ? current : blankState();
+      if(!base.people) base.people = {};
+      if(!base.meta) base.meta = { title:"Our Family Tree" };
+      mutator(base);
+      base.meta.updatedAt = Date.now();
+      return base;
+    }).catch(function(e){
+      showToast("That change did not save: " + e.message, null);
+    });
+  }
+
+  /* ---------------- Rendering ---------------- */
+  var treeEl = document.getElementById('tree');
+  var treeScroll = document.getElementById('treeScroll');
+  var emptyState = document.getElementById('emptyState');
+  var legend = document.getElementById('legend');
+
+  function render(){
+    var people = allPeople();
+    document.getElementById('count').innerHTML = "<b>"+people.length+"</b> "+(people.length===1?"person":"people");
+    if(people.length===0){
+      emptyState.style.display='block'; treeScroll.style.display='none'; legend.style.display='none'; return;
+    }
+    emptyState.style.display='none'; treeScroll.style.display='inline-block'; legend.style.display='block';
+    var rendered = {}; treeEl.innerHTML='';
+    people.filter(function(p){ return !p.parentIds || p.parentIds.length===0; }).forEach(function(r){
+      if(rendered[r.id]) return;
+      treeEl.appendChild(renderNode(r, rendered));
+    });
+  }
+
+  function renderNode(person, rendered){
+    rendered[person.id] = true;
+    var partner = null;
+    if(person.partnerIds && person.partnerIds.length){
+      for(var i=0;i<person.partnerIds.length;i++){
+        var pid = person.partnerIds[i];
+        if(get(pid) && !rendered[pid]){ partner = get(pid); break; }
+      }
+    }
+    if(partner) rendered[partner.id] = true;
+
+    var kidsMap = {};
+    childrenOf(person.id).forEach(function(c){ kidsMap[c.id]=c; });
+    if(partner) childrenOf(partner.id).forEach(function(c){ kidsMap[c.id]=c; });
+    var kids = Object.keys(kidsMap).map(function(k){return kidsMap[k];})
+      .filter(function(c){ return !rendered[c.id]; })
+      .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+
+    var li = document.createElement('li');
+    var couple = document.createElement('div'); couple.className='couple';
+    couple.appendChild(card(person, partner));
+    if(partner){ var u=document.createElement('div'); u.className='union'; couple.appendChild(u); couple.appendChild(card(partner, person)); }
+    li.appendChild(couple);
+
+    if(kids.length){
+      var isClosed = !!collapsed[person.id] || (partner && !!collapsed[partner.id]);
+      var tg = document.createElement('button');
+      tg.className = 'toggle' + (isClosed?' closed':'');
+      tg.innerHTML = '<span class="car">&#9660;</span>' + (isClosed ? ('Show '+kids.length+' '+(kids.length===1?'child':'children')) : 'Hide children');
+      tg.onclick = function(){
+        var willClose = !collapsed[person.id];
+        collapsed[person.id]=willClose; if(partner) collapsed[partner.id]=willClose; render();
+      };
+      li.appendChild(tg);
+      if(!isClosed){
+        var ul=document.createElement('ul');
+        kids.forEach(function(k){ ul.appendChild(renderNode(k, rendered)); });
+        li.appendChild(ul);
+      }
+    }
+    return li;
+  }
+
+  function card(person, mate){
+    var sx = person.sex==='f'?'sx-f':(person.sex==='m'?'sx-m':'sx-u');
+    var div = document.createElement('div'); div.className='card '+sx; div.id='card-'+person.id;
+    var yrs = yearsText(person);
+    var added = person.editedBy ? ('added by '+esc(person.editedBy)) : '';
+    div.innerHTML =
+      '<div class="stripe"></div><div class="card-body">'+
+      '<div class="nm">'+esc(person.name||'Unnamed')+'</div>'+
+      (person.maiden?'<div class="maiden">née '+esc(person.maiden)+'</div>':'')+
+      (yrs?'<div class="yrs">'+esc(yrs)+'</div>':'')+
+      (person.notes?'<div class="note">'+esc(person.notes)+'</div>':'')+
+      (added?'<div class="added">'+added+'</div>':'')+
+      '<div class="acts"></div></div>';
+    var acts = div.querySelector('.acts');
+    var bChild=document.createElement('button'); bChild.className='chip chip-child'; bChild.textContent='+ Child';
+    bChild.onclick=function(){ openAddChild(person, mate); }; acts.appendChild(bChild);
+    var bPartner=document.createElement('button'); bPartner.className='chip chip-partner'; bPartner.textContent='+ Partner';
+    bPartner.onclick=function(){ openAddPartner(person); }; acts.appendChild(bPartner);
+    var bEdit=document.createElement('button'); bEdit.className='chip chip-edit'; bEdit.textContent='Edit';
+    bEdit.onclick=function(){ openEdit(person); }; acts.appendChild(bEdit);
+    return div;
+  }
+
+  /* ---------------- Modal ---------------- */
+  var overlay=document.getElementById('overlay'), modalTitle=document.getElementById('modalTitle'),
+      modalCtx=document.getElementById('modalCtx'), dedupBox=document.getElementById('dedupBox'),
+      dedupLbl=document.getElementById('dedupLbl'), existingSelect=document.getElementById('existingSelect'),
+      newFields=document.getElementById('newFields'), fName=document.getElementById('fName'),
+      fBirth=document.getElementById('fBirth'), fDeath=document.getElementById('fDeath'),
+      fMaiden=document.getElementById('fMaiden'), fNotes=document.getElementById('fNotes'),
+      maidenField=document.getElementById('maidenField'), sexSeg=document.getElementById('sexSeg'),
+      modalDelete=document.getElementById('modalDelete'), modalSave=document.getElementById('modalSave');
+  var current={mode:null,person:null,mate:null,sex:'u'}, modalOpen=false;
+
+  function setSex(s){
+    current.sex=s;
+    Array.prototype.forEach.call(sexSeg.querySelectorAll('button'), function(b){ b.classList.toggle('on', b.getAttribute('data-sex')===s); });
+    maidenField.style.display = (s==='f')?'block':'none';
+  }
+  Array.prototype.forEach.call(sexSeg.querySelectorAll('button'), function(b){ b.onclick=function(){ setSex(b.getAttribute('data-sex')); }; });
+  function clearFields(){ fName.value=''; fBirth.value=''; fDeath.value=''; fMaiden.value=''; fNotes.value=''; existingSelect.value=''; setSex('u'); newFields.style.display='block'; }
+  function fillExisting(exclude){
+    existingSelect.innerHTML='<option value="">— Add someone new —</option>';
+    allPeople().forEach(function(p){
+      if(exclude && exclude.indexOf(p.id)>-1) return;
+      var o=document.createElement('option'); o.value=p.id;
+      o.textContent=p.name+(yearsText(p)?(' ('+yearsText(p)+')'):''); existingSelect.appendChild(o);
+    });
+  }
+  existingSelect.onchange=function(){ newFields.style.display = existingSelect.value?'none':'block'; };
+  function openModal(){ overlay.classList.add('open'); modalOpen=true; setTimeout(function(){ if(newFields.style.display!=='none') fName.focus(); },50); }
+  function closeModal(){ overlay.classList.remove('open'); modalOpen=false; }
+
+  function openAddFounder(){ current={mode:'founder',person:null,mate:null,sex:'u'}; modalTitle.textContent='Add an elder'; modalCtx.textContent='A founding ancestor at the top of the tree.'; dedupBox.style.display='none'; modalDelete.style.display='none'; clearFields(); openModal(); }
+  function openAddChild(person, mate){ current={mode:'child',person:person,mate:mate||null,sex:'u'}; modalTitle.textContent='Add a child'; modalCtx.textContent = mate?('Child of '+person.name+' & '+mate.name):('Child of '+person.name); dedupLbl.textContent='Is this child already in the tree?'; dedupBox.style.display='block'; var ex=[person.id]; if(mate) ex.push(mate.id); fillExisting(ex); modalDelete.style.display='none'; clearFields(); openModal(); }
+  function openAddPartner(person){ current={mode:'partner',person:person,mate:null,sex:person.sex==='f'?'m':(person.sex==='m'?'f':'u')}; modalTitle.textContent='Add a partner'; modalCtx.textContent='Partner / spouse of '+person.name; dedupLbl.textContent='Is this partner already in the tree?'; dedupBox.style.display='block'; fillExisting([person.id]); modalDelete.style.display='none'; clearFields(); setSex(current.sex); openModal(); }
+  function openEdit(person){ current={mode:'edit',person:person,mate:null,sex:person.sex||'u'}; modalTitle.textContent='Edit '+person.name; modalCtx.textContent='Update details. Changes show for everyone.'; dedupBox.style.display='none'; clearFields(); fName.value=person.name||''; fBirth.value=person.birth||''; fDeath.value=person.death||''; fMaiden.value=person.maiden||''; fNotes.value=person.notes||''; setSex(person.sex||'u'); modalDelete.style.display='block'; openModal(); }
+
+  function makePerson(){
+    return { id:uid(), createdAt:Date.now(), name:fName.value.trim(), sex:current.sex,
+      birth:fBirth.value.trim(), death:fDeath.value.trim(),
+      maiden: current.sex==='f'? fMaiden.value.trim():'', notes:fNotes.value.trim(),
+      editedBy: editorName||'', parentIds:[], partnerIds:[] };
+  }
+
+  modalSave.onclick=function(){
+    var picked = (current.mode!=='founder' && current.mode!=='edit') ? existingSelect.value : '';
+    if(current.mode==='edit'){
+      var nm=fName.value.trim(); if(!nm){ fName.focus(); return; } var id=current.person.id;
+      commit(function(d){ var p=d.people[id]; if(!p) return; p.name=nm; p.sex=current.sex; p.birth=fBirth.value.trim(); p.death=fDeath.value.trim(); p.maiden=current.sex==='f'?fMaiden.value.trim():''; p.notes=fNotes.value.trim(); p.editedBy=editorName||p.editedBy||''; });
+      closeModal(); return;
+    }
+    if(current.mode==='founder'){
+      var nmF=fName.value.trim(); if(!nmF){ fName.focus(); return; } var np=makePerson();
+      commit(function(d){ d.people[np.id]=np; }); flashAfter(np.id); closeModal(); return;
+    }
+    if(current.mode==='child'){
+      var pa=current.person.id, pb=current.mate?current.mate.id:null;
+      if(picked){
+        if(isDescendant(picked,pa)||(pb&&isDescendant(picked,pb))){ showToast("That would create a loop — a relative cannot be both ancestor and descendant.", null); return; }
+        commit(function(d){ var c=d.people[picked]; if(!c) return; var ids=[pa]; if(pb) ids.push(pb); c.parentIds=ids; }); flashAfter(picked);
+      } else {
+        var nmC=fName.value.trim(); if(!nmC){ fName.focus(); return; } var child=makePerson(); child.parentIds=pb?[pa,pb]:[pa];
+        commit(function(d){ d.people[child.id]=child; }); flashAfter(child.id);
+      }
+      closeModal(); return;
+    }
+    if(current.mode==='partner'){
+      var baseId=current.person.id;
+      if(picked){
+        commit(function(d){ var a=d.people[baseId], b=d.people[picked]; if(!a||!b) return; a.partnerIds=a.partnerIds||[]; b.partnerIds=b.partnerIds||[]; if(a.partnerIds.indexOf(picked)<0) a.partnerIds.push(picked); if(b.partnerIds.indexOf(baseId)<0) b.partnerIds.push(baseId); }); flashAfter(picked);
+      } else {
+        var nmP=fName.value.trim(); if(!nmP){ fName.focus(); return; } var partner=makePerson(); partner.partnerIds=[baseId];
+        commit(function(d){ d.people[partner.id]=partner; var a=d.people[baseId]; if(a){ a.partnerIds=a.partnerIds||[]; if(a.partnerIds.indexOf(partner.id)<0) a.partnerIds.push(partner.id); } }); flashAfter(partner.id);
+      }
+      closeModal(); return;
+    }
+  };
+
+  modalDelete.onclick=function(){
+    if(current.mode!=='edit'||!current.person) return; var p=current.person; var kids=childrenOf(p.id);
+    var msg='Remove '+p.name+'?'; if(kids.length) msg+='\n\nTheir '+kids.length+' '+(kids.length===1?'child':'children')+' will stay in the tree but lose this parent link.';
+    if(!window.confirm(msg)) return; var id=p.id;
+    commit(function(d){ delete d.people[id]; Object.keys(d.people).forEach(function(k){ var x=d.people[k]; if(x.parentIds) x.parentIds=x.parentIds.filter(function(i){return i!==id;}); if(x.partnerIds) x.partnerIds=x.partnerIds.filter(function(i){return i!==id;}); }); });
+    closeModal();
+  };
+  document.getElementById('modalCancel').onclick=closeModal;
+  document.getElementById('modalX').onclick=closeModal;
+  overlay.onclick=function(e){ if(e.target===overlay) closeModal(); };
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&modalOpen) closeModal(); });
+
+  function flashAfter(id){
+    setTimeout(function(){ expandTo(id); render(); setTimeout(function(){ var el=document.getElementById('card-'+id); if(el){ el.classList.add('flash'); el.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); } },70); },160);
+  }
+  function expandTo(id){
+    var guard={};
+    (function up(cid){ if(guard[cid]) return; guard[cid]=true; var p=get(cid); if(!p||!p.parentIds) return;
+      p.parentIds.forEach(function(par){ collapsed[par]=false; var pp=get(par); if(pp&&pp.partnerIds) pp.partnerIds.forEach(function(m){ collapsed[m]=false; }); up(par); }); })(id);
+  }
+
+  /* ---------------- Search ---------------- */
+  var searchInput=document.getElementById('search'), searchResults=document.getElementById('searchResults');
+  searchInput.addEventListener('input', function(){
+    var q=searchInput.value.trim().toLowerCase(); if(!q){ searchResults.style.display='none'; return; }
+    var matches=allPeople().filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1||(p.maiden||'').toLowerCase().indexOf(q)>-1; }).slice(0,30);
+    if(!matches.length){ searchResults.innerHTML='<div class="empty">No one by that name yet.</div>'; }
+    else { searchResults.innerHTML=''; matches.forEach(function(p){ var b=document.createElement('button'); b.innerHTML=esc(p.name)+(yearsText(p)?(' <span class="yrs">'+esc(yearsText(p))+'</span>'):''); b.onclick=function(){ searchResults.style.display='none'; searchInput.value=''; expandTo(p.id); render(); setTimeout(function(){ var el=document.getElementById('card-'+p.id); if(el){ el.classList.add('flash'); el.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); } },60); }; searchResults.appendChild(b); }); }
+    searchResults.style.display='block';
+  });
+  document.addEventListener('click', function(e){ if(!e.target.closest('.search-wrap')) searchResults.style.display='none'; });
+
+  /* ---------------- Toast / status ---------------- */
+  var toast=document.getElementById('toast'), toastMsg=document.getElementById('toastMsg'), toastAction=document.getElementById('toastAction'), toastTimer=null;
+  function showToast(msg, label, fn){ toastMsg.textContent=msg; if(label){ toastAction.style.display='inline-block'; toastAction.textContent=label; toastAction.onclick=function(){ hideToast(); if(fn) fn(); }; } else toastAction.style.display='none'; toast.classList.add('show'); clearTimeout(toastTimer); if(!label) toastTimer=setTimeout(hideToast, 4200); }
+  function hideToast(){ toast.classList.remove('show'); }
+  function setStatus(kind, text){ var s=document.getElementById('status'); s.className='status'+(kind?(' '+kind):''); document.getElementById('statusTxt').textContent=text; }
+
+  /* ---------------- Notices ---------------- */
+  function setNotice(html, isErr){ document.getElementById('noticeArea').innerHTML = html ? ('<div class="notice-inner'+(isErr?' err':'')+'"><span>'+html+'</span></div>') : ''; }
+
+  /* ---------------- Export / Import ---------------- */
+  document.getElementById('exportBtn').onclick=function(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='family-tree-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){ URL.revokeObjectURL(a.href); },1000); showToast("Backup downloaded.", null);
+  };
+  var importFile=document.getElementById('importFile');
+  document.getElementById('importBtn').onclick=function(){ importFile.click(); };
+  importFile.onchange=function(){
+    var f=importFile.files[0]; if(!f) return; var reader=new FileReader();
+    reader.onload=function(){
+      try{ var data=JSON.parse(reader.result); if(!data||!data.people) throw new Error("bad file");
+        if(!window.confirm("Restore from this backup? It replaces the current tree for everyone with the link.")) return;
+        if(treeRef){ data.meta=data.meta||{}; data.meta.updatedAt=Date.now(); fb.set(treeRef, data); }
+        else { state=data; render(); }
+        showToast("Tree restored from backup.", null);
+      }catch(err){ showToast("That file is not a valid family-tree backup.", null); }
+      importFile.value='';
+    };
+    reader.readAsText(f);
+  };
+
+  /* ---------------- Editor name (saved on this device) ---------------- */
+  var editorNameInput=document.getElementById('editorName');
+  try{ editorName = localStorage.getItem('ft-editor')||''; }catch(e){}
+  if(editorName) editorNameInput.value=editorName;
+  editorNameInput.addEventListener('change', function(){ editorName=editorNameInput.value.trim(); try{ localStorage.setItem('ft-editor', editorName); }catch(e){} });
+
+  document.getElementById('addFounder').onclick=openAddFounder;
+  document.getElementById('addFirst').onclick=openAddFounder;
+
+  /* ---------------- Setup screen (shown until config is filled) ---------------- */
+  function showSetupScreen(){
+    document.getElementById('tools').style.display='none';
+    emptyState.style.display='none'; treeScroll.style.display='none';
+    setStatus('error','Not set up');
+    setNotice('This file is not connected yet. Follow the one-time setup below, then reload.', true);
+    var rules = '{\n  "rules": {\n    "'+TREE_PATH+'": {\n      ".read": "auth != null",\n      ".write": "auth != null"\n    }\n  }\n}';
+    var el=document.getElementById('setupScreen'); el.style.display='block';
+    el.innerHTML =
+      '<div class="setup-card">'+
+      '<h2>One-time setup</h2>'+
+      '<p class="lead">This family tree stores everyone in your own free Firebase project, so the link works anywhere and updates live for everyone. It takes about five minutes, once.</p>'+
+      '<ol>'+
+      '<li>Go to <b>console.firebase.google.com</b> and click <b>Add project</b>. Name it (e.g. <code>family-tree</code>) and finish. Analytics is optional.</li>'+
+      '<li>In the left menu open <b>Build → Realtime Database</b>, click <b>Create Database</b>, pick a location, and start it.</li>'+
+      '<li>Open <b>Build → Authentication → Get started</b>, then under <b>Sign-in method</b> enable <b>Anonymous</b> and save. (This lets family members edit without signing in, while keeping strangers out.)</li>'+
+      '<li>Back in <b>Realtime Database → Rules</b>, paste this and click <b>Publish</b>:<pre>'+esc(rules)+'</pre></li>'+
+      '<li>Open <b>Project settings</b> (gear icon) → <b>General</b> → scroll to <b>Your apps</b> → click the web icon <code>&lt;/&gt;</code>, register an app, and copy the <code>firebaseConfig</code> values.</li>'+
+      '<li>Open this HTML file in a text editor, paste each value into the <code>firebaseConfig</code> block near the top, save, and reload this page.</li>'+
+      '</ol>'+
+      '<div class="tip">Make sure <code>databaseURL</code> is filled in — it looks like <code>https://your-project-default-rtdb.firebaseio.com</code> and is the one value that makes the live sync work. If it is missing from your config, copy it from the top of the Realtime Database page.</div>'+
+      '</div>';
+  }
+
+  /* ---------------- Passphrase gate ---------------- */
+  function norm(s){ return (s==null?'':String(s)).trim().toLowerCase(); }
+  function isUnlocked(){ try{ return norm(localStorage.getItem('ft-pass')) === norm(PASSPHRASE); }catch(e){ return false; } }
+  function showLockScreen(){
+    var lock=document.getElementById('lockScreen'); lock.style.display='flex';
+    var input=document.getElementById('passInput'), btn=document.getElementById('passBtn'), err=document.getElementById('lockErr');
+    setTimeout(function(){ input.focus(); },60);
+    function tryUnlock(){
+      if(norm(input.value)===norm(PASSPHRASE)){
+        try{ localStorage.setItem('ft-pass', PASSPHRASE); }catch(e){}
+        lock.style.display='none'; startApp();
+      } else { err.textContent='That passphrase is not right. Please try again.'; input.value=''; input.focus(); }
+    }
+    btn.onclick=tryUnlock;
+    input.onkeydown=function(e){ if(e.key==='Enter') tryUnlock(); };
+  }
+
+  /* ---------------- Boot ---------------- */
+  async function startApp(){
+    setNotice('Everyone with this link builds <b>one shared tree</b> — additions appear live for the whole family. Already-added relatives show up in the picker so no one is entered twice. Use <b>Backup</b> now and then to keep a safe copy.', false);
+    var base = 'https://www.gstatic.com/firebasejs/'+FIREBASE_VERSION+'/';
+    try{
+      var appMod  = await import(base+'firebase-app.js');
+      var dbMod   = await import(base+'firebase-database.js');
+      var authMod = await import(base+'firebase-auth.js');
+      var app = appMod.initializeApp(firebaseConfig);
+      var db  = dbMod.getDatabase(app);
+      var auth= authMod.getAuth(app);
+      fb.runTransaction = dbMod.runTransaction;
+      fb.set = dbMod.set;
+      treeRef = dbMod.ref(db, TREE_PATH);
+
+      authMod.signInAnonymously(auth).catch(function(e){
+        setStatus('error','Sign-in off');
+        setNotice('Could not sign in: '+esc(e.message)+'. In the Firebase console, enable <b>Authentication → Sign-in method → Anonymous</b>.', true);
+      });
+
+      var listening=false;
+      authMod.onAuthStateChanged(auth, function(user){
+        if(!user || listening) return; listening=true; connected=true;
+        dbMod.onValue(treeRef, function(snap){
+          var v=snap.val(); state = (v && v.people)? v : blankState(); if(!state.people) state.people={};
+          setStatus('live','Live'); render();
+        }, function(err){
+          setStatus('error','Blocked');
+          setNotice('Could not read the tree: '+esc(err.message)+'. Check your <b>Realtime Database → Rules</b> match the setup.', true);
+        });
+      });
+    }catch(e){
+      setStatus('error','SDK error');
+      setNotice('Could not load Firebase (version '+esc(FIREBASE_VERSION)+'). Check the internet connection, or change <code>FIREBASE_VERSION</code> near the top of the file to a current release.', true);
+    }
+  }
+
+  (function boot(){
+    if(!isConfigured()){ showSetupScreen(); return; }
+    if(!isUnlocked()){ showLockScreen(); return; }
+    startApp();
+  })();
+
+})();
+</script>
+</body>
+</html>
