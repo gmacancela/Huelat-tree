@@ -421,11 +421,16 @@
   function renderNode(person, rendered){
     rendered[person.id] = true;
 
-    // Collect all unrendered partners in order
+    // Collect partners: unrendered ones, PLUS already-rendered root-level partners
+    // (a root partner rendered earlier means they belong to a prior union on this node)
     var partners = [];
     if(person.partnerIds && person.partnerIds.length){
       person.partnerIds.forEach(function(pid){
-        if(get(pid) && !rendered[pid]) partners.push(get(pid));
+        var pt = get(pid); if(!pt) return;
+        // Include if not yet rendered, OR if they are a root node already rendered
+        // (root-root second marriages: the partner may have been pre-marked by the root loop)
+        var isRoot = !pt.parentIds || pt.parentIds.length === 0;
+        if(!rendered[pid] || isRoot) partners.push(pt);
       });
     }
     partners.forEach(function(pt){ rendered[pt.id] = true; });
