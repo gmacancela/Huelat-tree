@@ -269,7 +269,7 @@
         <div class="seg" id="sexSeg">
           <button data-sex="m" type="button">Male</button>
           <button data-sex="f" type="button">Female</button>
-          <button data-sex="u" type="button" class="on">Prefer not to say</button>
+          <button data-sex="u" type="button" class="on">Unknown</button>
         </div>
         <div class="row2">
           <div class="field"><label for="fBirth">Born</label><input id="fBirth" type="text" placeholder="year, e.g. 1948"></div>
@@ -418,48 +418,82 @@
 
   function renderNode(person, rendered){
     rendered[person.id] = true;
-    var partner = null;
-    if(person.partnerIds && person.partnerIds.length){
-      for(var i=0;i<person.partnerIds.length;i++){
-        var pid = person.partnerIds[i];
-        if(get(pid) && !rendered[pid]){ partner = get(pid); break; }
-      }
-    }
-    if(partner) rendered[partner.id] = true;
 
-    var kidsMap = {};
-    childrenOf(person.id).forEach(function(c){ kidsMap[c.id]=c; });
-    if(partner) childrenOf(partner.id).forEach(function(c){ kidsMap[c.id]=c; });
-    var kids = Object.keys(kidsMap).map(function(k){return kidsMap[k];})
-      .filter(function(c){ return !rendered[c.id]; })
-      .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+    // Collect all unrendered partners in order
+    var partners = [];
+    if(person.partnerIds && person.partnerIds.length){
+      person.partnerIds.forEach(function(pid){
+        if(get(pid) && !rendered[pid]) partners.push(get(pid));
+      });
+    }
+    // Mark all partners rendered now so siblings don't re-render them
+    partners.forEach(function(pt){ rendered[pt.id] = true; });
 
     var li = document.createElement('li');
-    var couple = document.createElement('div'); couple.className='couple';
-    couple.appendChild(card(person, partner));
-    if(partner){ var u=document.createElement('div'); u.className='union'; couple.appendChild(u); couple.appendChild(card(partner, person)); }
-    li.appendChild(couple);
 
-    if(kids.length){
-      var isClosed = !!collapsed[person.id] || (partner && !!collapsed[partner.id]);
-      var tg = document.createElement('button');
-      tg.className = 'toggle' + (isClosed?' closed':'');
-      tg.innerHTML = '<span class="car">&#9660;</span>' + (isClosed ? ('Show '+kids.length+' '+(kids.length===1?'child':'children')) : 'Hide children');
-      tg.onclick = function(){
-        var willClose = !collapsed[person.id];
-        collapsed[person.id]=willClose; if(partner) collapsed[partner.id]=willClose; render();
-      };
-      li.appendChild(tg);
-      if(!isClosed){
-        var ul=document.createElement('ul');
-        kids.forEach(function(k){ ul.appendChild(renderNode(k, rendered)); });
-        li.appendChild(ul);
-      }
+    if(partners.length === 0){
+      // Solo card — no partner
+      var couple0 = document.createElement('div'); couple0.className='couple';
+      couple0.appendChild(card(person, null, false));
+      li.appendChild(couple0);
+      var soloKids = childrenOf(person.id)
+        .filter(function(c){ return !rendered[c.id]; })
+        .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+      appendKidsBlock(li, soloKids, person, null, rendered);
+    } else {
+      // One or more partners — each gets its own union row + children block
+      var claimedKids = {};
+      partners.forEach(function(partner, idx){
+        var coupleN = document.createElement('div'); coupleN.className='couple';
+        // Suppress +Partner button on duplicate card rows (idx>0) to avoid confusion
+        coupleN.appendChild(card(person, partner, idx > 0));
+        var u=document.createElement('div'); u.className='union'; coupleN.appendChild(u);
+        coupleN.appendChild(card(partner, person, false));
+        li.appendChild(coupleN);
+
+        // Children shared by this specific pair
+        var sharedMap = {};
+        childrenOf(person.id).forEach(function(c){ sharedMap[c.id]=c; });
+        childrenOf(partner.id).forEach(function(c){ sharedMap[c.id]=c; });
+        var sharedKids = Object.keys(sharedMap).map(function(k){return sharedMap[k];})
+          .filter(function(c){
+            if(rendered[c.id] || claimedKids[c.id]) return false;
+            var hasPerson  = c.parentIds && c.parentIds.indexOf(person.id) > -1;
+            var hasPartner = c.parentIds && c.parentIds.indexOf(partner.id) > -1;
+            return hasPerson && hasPartner;
+          })
+          .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+        sharedKids.forEach(function(c){ claimedKids[c.id]=true; });
+        appendKidsBlock(li, sharedKids, person, partner, rendered);
+      });
+
+      // Leftover children of person not claimed by any union
+      var leftoverKids = childrenOf(person.id)
+        .filter(function(c){ return !rendered[c.id] && !claimedKids[c.id]; })
+        .sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+      appendKidsBlock(li, leftoverKids, person, null, rendered);
     }
+
     return li;
   }
 
-  function card(person, mate){
+  function appendKidsBlock(li, kids, person, partner, rendered){
+    if(!kids.length) return;
+    var collapseKey = person.id + (partner ? '+' + partner.id : '');
+    var isClosed = !!collapsed[collapseKey];
+    var tg = document.createElement('button');
+    tg.className = 'toggle' + (isClosed?' closed':'');
+    tg.innerHTML = '<span class="car">&#9660;</span>' + (isClosed ? ('Show '+kids.length+' '+(kids.length===1?'child':'children')) : 'Hide children');
+    tg.onclick = function(){ collapsed[collapseKey] = !collapsed[collapseKey]; render(); };
+    li.appendChild(tg);
+    if(!isClosed){
+      var ul=document.createElement('ul');
+      kids.forEach(function(k){ rendered[k.id]=true; ul.appendChild(renderNode(k, rendered)); });
+      li.appendChild(ul);
+    }
+  }
+
+  function card(person, mate, hidePartnerBtn){
     var sx = person.sex==='f'?'sx-f':(person.sex==='m'?'sx-m':'sx-u');
     var div = document.createElement('div'); div.className='card '+sx; div.id='card-'+person.id;
     var yrs = yearsText(person);
@@ -475,8 +509,10 @@
     var acts = div.querySelector('.acts');
     var bChild=document.createElement('button'); bChild.className='chip chip-child'; bChild.textContent='+ Child';
     bChild.onclick=function(){ openAddChild(person, mate); }; acts.appendChild(bChild);
-    var bPartner=document.createElement('button'); bPartner.className='chip chip-partner'; bPartner.textContent='+ Partner';
-    bPartner.onclick=function(){ openAddPartner(person); }; acts.appendChild(bPartner);
+    if(!hidePartnerBtn){
+      var bPartner=document.createElement('button'); bPartner.className='chip chip-partner'; bPartner.textContent='+ Partner';
+      bPartner.onclick=function(){ openAddPartner(person); }; acts.appendChild(bPartner);
+    }
     var bEdit=document.createElement('button'); bEdit.className='chip chip-edit'; bEdit.textContent='Edit';
     bEdit.onclick=function(){ openEdit(person); }; acts.appendChild(bEdit);
     return div;
